@@ -141,9 +141,21 @@ app.get('/delete', async (req, res) => {
 
 // board
 app.get('/board/list', async (req, res) => {
-  const { } = req.query;
+  const { option, keyword } = req.query;
+  
+  let subQuery = "";
+  if(option == "all"){
+    subQuery = `WHERE TITLE LIKE '%${keyword}%' OR USERID LIKE '%${keyword}%'`;
+  } else if(option == "title"){
+    subQuery = `WHERE TITLE LIKE '%${keyword}%'`;
+  } else if(option == "user"){
+    subQuery = `WHERE USERID LIKE '%${keyword}%'`;
+  }
+  let query = 
+      `SELECT B.*, TO_CHAR(CDATETIME, 'YYYY-MM-DD') CTIME `
+    + `FROM TBL_BOARD B ` + subQuery;
   try {
-    const result = await connection.execute(`SELECT B.*, TO_CHAR(CDATETIME, 'YYYY-MM-DD') CTIME FROM TBL_BOARD B`);
+    const result = await connection.execute(query);
     const columnNames = result.metaData.map(column => column.name);
     // 쿼리 결과를 JSON 형태로 변환
     const rows = result.rows.map(row => {
@@ -186,6 +198,42 @@ app.get('/board/view', async (req, res) => {
   }
 });
 
+app.get('/board/delete', async (req, res) => {
+  const { boardNo } = req.query;
+
+  try {
+    await connection.execute(
+      `DELETE FROM TBL_BOARD WHERE BOARDNO = :boardNo`,
+      [boardNo],
+      { autoCommit: true }
+    );
+    res.json({
+        result : "success"
+    });
+  } catch (error) {
+    console.error('Error executing delete', error);
+    res.status(500).send('Error executing delete');
+  }
+});
+
+app.get('/board/insert', async (req, res) => {
+  const { title, userId, contents, kind } = req.query;
+  let query = `INSERT INTO TBL_BOARD `
+            + `VALUES(B_SEQ.NEXTVAL, '${title}', '${contents}', '${userId}', 0, 0, ${kind}, SYSDATE, SYSDATE)`;
+  try {
+    await connection.execute(
+      query,
+      [],
+      { autoCommit: true }
+    );
+    res.json({
+        result : "success"
+    });
+  } catch (error) {
+    console.error('Error executing insert', error);
+    res.status(500).send('Error executing insert');
+  }
+});
 
 // 서버 시작
 app.listen(3009, () => {

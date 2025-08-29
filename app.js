@@ -62,9 +62,9 @@ app.get('/list', async (req, res) => {
 
 
 app.get('/search', async (req, res) => {
-  const { id } = req.query;
+  const { stuNo } = req.query;
   try {
-    const result = await connection.execute(`SELECT * FROM STUDENT WHERE STU_NO LIKE '%${id}%'`);
+    const result = await connection.execute(`SELECT * FROM STUDENT WHERE STU_NO = ${stuNo}`);
     const columnNames = result.metaData.map(column => column.name);
 
     // 쿼리 결과를 JSON 형태로 변환
@@ -84,12 +84,12 @@ app.get('/search', async (req, res) => {
 });
 
 app.get('/insert', async (req, res) => {
-  const { stu_no, name, dept } = req.query;
+  const { stuNo, name, dept } = req.query;
 
   try {
     await connection.execute(
-      `INSERT INTO STUDENT (STU_NO, NAME, DEPT) VALUES (:stu_no, :name, :dept)`,
-      [stu_no, name, dept],
+      `INSERT INTO STUDENT (STU_NO, STU_NAME, STU_DEPT) VALUES (:stuNo, :name, :dept)`,
+      [stuNo, name, dept],
       { autoCommit: true }
     );
     res.json({
@@ -138,6 +138,54 @@ app.get('/delete', async (req, res) => {
     res.status(500).send('Error executing delete');
   }
 });
+
+// board
+app.get('/board/list', async (req, res) => {
+  const { } = req.query;
+  try {
+    const result = await connection.execute(`SELECT B.*, TO_CHAR(CDATETIME, 'YYYY-MM-DD') CTIME FROM TBL_BOARD B`);
+    const columnNames = result.metaData.map(column => column.name);
+    // 쿼리 결과를 JSON 형태로 변환
+    const rows = result.rows.map(row => {
+      // 각 행의 데이터를 컬럼명에 맞게 매핑하여 JSON 객체로 변환
+      const obj = {};
+      columnNames.forEach((columnName, index) => {
+        obj[columnName] = row[index];
+      });
+      return obj;
+    });
+    res.json({
+        result : "success",
+        list : rows
+    });
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Error executing query');
+  }
+});
+
+app.get('/board/view', async (req, res) => {
+  const { boardNo } = req.query;
+  try {
+    const result = await connection.execute(`SELECT B.*, TO_CHAR(CDATETIME, 'YYYY-MM-DD') CTIME FROM TBL_BOARD B WHERE BOARDNO = ${boardNo}`);
+    const columnNames = result.metaData.map(column => column.name);
+
+    // 쿼리 결과를 JSON 형태로 변환
+    const rows = result.rows.map(row => {
+      // 각 행의 데이터를 컬럼명에 맞게 매핑하여 JSON 객체로 변환
+      const obj = {};
+      columnNames.forEach((columnName, index) => {
+        obj[columnName] = row[index];
+      });
+      return obj;
+    });
+    res.json(rows);
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Error executing query');
+  }
+});
+
 
 // 서버 시작
 app.listen(3009, () => {

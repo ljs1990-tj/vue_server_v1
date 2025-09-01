@@ -235,6 +235,30 @@ app.get('/board/insert', async (req, res) => {
   }
 });
 
+app.get('/board/update', async (req, res) => {
+  const { title, userId, contents, kind, boardNo } = req.query;
+  let query = `UPDATE TBL_BOARD SET `
+            + `TITLE = '${title}', `
+            + `USERID = '${userId}', `
+            + `CONTENTS = '${contents}', `
+            + `KIND = ${kind} `
+            + `WHERE BOARDNO = ${boardNo}`;
+  // console.log(query);
+  try {
+    await connection.execute(
+      query,
+      [],
+      { autoCommit: true }
+    );
+    res.json({
+        result : "success"
+    });
+  } catch (error) {
+    console.error('Error executing insert', error);
+    res.status(500).send('Error executing insert');
+  }
+});
+
 // 서버 시작
 app.listen(3009, () => {
   console.log('Server is running on port 3009');
